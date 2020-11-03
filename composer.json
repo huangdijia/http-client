@@ -1,0 +1,28 @@
+{
+    "name": "huangdijia/http-client",
+    "description": "Http client base curl, like laravel http client",
+    "type": "library",
+    "keywords": [
+        "http",
+        "client",
+        "curl"
+    ],
+    "homepage": "https://github.com/huangdijia/http-client",
+    "license": "MIT",
+    "authors": [{
+        "name": "huangdijia",
+        "email": "huangdijia@gmail.com"
+    }],
+    "require": {
+        "php": ">=7.0.0",
+        "ext-curl": "*"
+    },
+    "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
+        "psr-4": {
+            "Huangdijia\\Http\\": "src/"
+        }
+    }
+}
