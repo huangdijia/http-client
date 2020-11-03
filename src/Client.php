@@ -35,6 +35,9 @@ class Client
         return call_user_func_array([self::client(), $name], $arguments);
     }
 
+    /**
+     * @return Request 
+     */
     public static function client()
     {
         return new Request;
