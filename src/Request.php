@@ -345,13 +345,11 @@ class Request
         $options = $this->options + $options + [
             CURLOPT_URL            => $url,
             CURLOPT_CUSTOMREQUEST  => strtoupper($method),
-            CURLOPT_RETURNTRANSFER => true, // false
-            CURLOPT_HEADER         => true, // false
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER         => true,
             CURLINFO_HEADER_OUT    => true,
             CURLOPT_CONNECTTIMEOUT => 150,
         ];
-
-        // var_dump($options[CURLOPT_POSTFIELDS]);exit;
 
         foreach ($options as $key => $value) {
             if (!is_int($key)) {
