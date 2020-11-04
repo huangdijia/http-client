@@ -26,12 +26,17 @@ class Request
     /**
      * @var int
      */
+    protected $timeout;
+    /**
+     * @var int
+     */
     protected $retryDelay;
 
     public function __construct()
     {
         $this->tries      = 1;
         $this->retryDelay = 100;
+        $this->timeout    = 2;
     }
 
     /**
@@ -146,7 +151,7 @@ class Request
      * @param  string  $domain
      * @return $this
      */
-    public function withCookies(array $cookies, string $domain)
+    public function withCookies(array $cookies, string $domain = '')
     {
         return tap($this, function () use ($cookies, $domain) {
             $this->options[CURLOPT_COOKIE] = value(function () use ($cookies) {
@@ -181,7 +186,7 @@ class Request
     public function timeout(int $seconds)
     {
         return tap($this, function () use ($seconds) {
-            $this->options[CURLOPT_TIMEOUT] = $seconds;
+            $this->timeout = $seconds;
         });
     }
 
@@ -408,6 +413,9 @@ class Request
 
                 $options[CURLOPT_HTTPHEADER] = $headers;
             }
+
+            // timeout
+            $this->options[CURLOPT_TIMEOUT] = $this->timeout;
 
             return array_filter(
                 $options,
