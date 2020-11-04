@@ -4,7 +4,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/huangdijia/http-client.svg?style=flat-square)](https://packagist.org/packages/huangdijia/http-client)
 [![GitHub license](https://img.shields.io/github/license/huangdijia/http-client)](https://github.com/huangdijia/http-client)
 
-Http client base curl, like laravel http client.
+HTTP client base curl, like laravel HTTP client.
 
 ## Installation
 

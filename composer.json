@@ -1,6 +1,6 @@
 {
     "name": "huangdijia/http-client",
-    "description": "Http client base curl, like laravel http client",
+    "description": "HTTP client base curl, like laravel HTTP client",
     "type": "library",
     "keywords": [
         "http",
