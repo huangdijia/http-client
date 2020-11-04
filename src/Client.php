@@ -40,6 +40,6 @@ class Client
      */
     public static function client()
     {
-        return new Request;
+        return new Request();
     }
 }

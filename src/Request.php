@@ -2,6 +2,9 @@
 
 namespace Huangdijia\Http;
 
+use Huangdijia\Http\Exceptions\ClientException;
+use Throwable;
+
 class Request
 {
     /**
@@ -27,7 +30,8 @@ class Request
 
     public function __construct()
     {
-        $this->ch = curl_init();
+        $this->tries      = 1;
+        $this->retryDelay = 100;
     }
 
     /**
@@ -105,10 +109,8 @@ class Request
     public function withDigestAuth($username, $password)
     {
         return tap($this, function () use ($username, $password) {
-            return tap($this, function () use ($username, $password) {
-                $this->options[CURLOPT_HTTPAUTH] = CURLAUTH_DIGEST;
-                $this->options[CURLOPT_USERPWD]  = "{$username}:{$password}";
-            });
+            $this->options[CURLOPT_HTTPAUTH] = CURLAUTH_DIGEST;
+            $this->options[CURLOPT_USERPWD]  = "{$username}:{$password}";
         });
     }
 
@@ -340,28 +342,29 @@ class Request
      */
     protected function send(string $method, string $url, array $options = [])
     {
-        $this->applyOptions($options);
+        $ch = curl_init();
 
-        $options = $this->options + $options + [
+        $options = $this->applyOptions($options + [
             CURLOPT_URL            => $url,
             CURLOPT_CUSTOMREQUEST  => strtoupper($method),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER         => true,
             CURLINFO_HEADER_OUT    => true,
             CURLOPT_CONNECTTIMEOUT => 150,
-        ];
+        ]);
 
-        foreach ($options as $key => $value) {
-            if (!is_int($key)) {
-                continue;
-            }
+        try {
+            curl_setopt_array($ch, $options);
 
-            curl_setopt($this->ch, $key, $value);
+            return retry($this->tries ?? 1, function () use ($ch) {
+                return new Response($ch);
+            }, $this->retryDelay ?? 100);
+
+        } catch (Throwable $e) {
+            throw new ClientException($e->getMessage());
+        } finally {
+            curl_close($ch);
         }
-
-        return retry($this->tries ?? 1, function () {
-            return new Response($this->ch);
-        }, $this->retryDelay ?? 100);
     }
 
     /**
@@ -386,24 +389,34 @@ class Request
 
     /**
      * @param array $options
-     * @return void
+     * @return array
      */
     protected function applyOptions(array $options = [])
     {
-        // headers
-        if (isset($this->options[CURLOPT_HEADER])) {
-            $headers = [];
+        return with($this->options + $options, function ($options) {
+            // headers
+            if (isset($options[CURLOPT_HEADER])) {
+                $headers = [];
 
-            foreach ($this->options[CURLOPT_HEADER] as $key => $value) {
-                $headers[] = sprintf(
-                    '%s: %s',
-                    $key,
-                    is_array($value) ? implode(',', $value) : $value
-                );
+                foreach ($options[CURLOPT_HEADER] as $key => $value) {
+                    $headers[] = sprintf(
+                        '%s: %s',
+                        $key,
+                        is_array($value) ? implode(',', $value) : $value
+                    );
+                }
+
+                $options[CURLOPT_HTTPHEADER] = $headers;
             }
 
-            $this->options[CURLOPT_HTTPHEADER] = $headers;
-        }
+            return array_filter(
+                $options,
+                function ($value, $key) {
+                    return is_int($key);
+                },
+                ARRAY_FILTER_USE_BOTH
+            );
+        });
     }
 
     /**
@@ -413,15 +426,17 @@ class Request
      */
     protected function buildUrl(string $url, array $query = [])
     {
-        if ($this->baseUrl) {
-            $url = rtrim($this->baseUrl, '/') . '/' . ltrim($url, '/');
-        }
+        return with($url, function ($url) use ($query) {
+            if ($this->baseUrl) {
+                $url = rtrim($this->baseUrl, '/') . '/' . ltrim($url, '/');
+            }
 
-        if ($query) {
-            $glue = false !== strpos($url, '?') ? '&' : '?';
-            $url .= $glue . http_build_query($query);
-        }
+            if ($query) {
+                $glue = false !== strpos($url, '?') ? '&' : '?';
+                $url .= $glue . http_build_query($query);
+            }
 
-        return $url;
+            return $url;
+        });
     }
 }

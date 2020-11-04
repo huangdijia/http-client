@@ -3,6 +3,8 @@
 namespace Huangdijia\Http;
 
 use Exception;
+use Huangdijia\Http\Exceptions\ClientException;
+use Huangdijia\Http\Exceptions\ServerException;
 use LogicException;
 use RuntimeException;
 
@@ -62,8 +64,8 @@ class Response implements \ArrayAccess
 
     /**
      * Make an CurlResponse
-     * @param mixed $ch 
-     * @return CurlResponse 
+     * @param mixed $ch
+     * @return CurlResponse
      */
     public static function make($ch)
     {
@@ -303,11 +305,11 @@ class Response implements \ArrayAccess
     /**
      * Primary IP.
      *
-     * @return string
+     * @return string|null
      */
     public function ip()
     {
-        return $this->info['primary_ip'];
+        return $this->info['primary_ip'] ?? null;
     }
 
     /**
@@ -317,6 +319,10 @@ class Response implements \ArrayAccess
      */
     function throw () {
         if ($this->failed()) {
+            throw_if($this->clientError(), new ClientException($this->body()));
+
+            throw_if($this->serverError(), new ServerException($this->body()));
+
             throw new Exception($this->body());
         }
 
